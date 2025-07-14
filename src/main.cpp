@@ -36,14 +36,17 @@ void consumer_thread(messages::PullStreamCommand command)
     in::DownloadState state;
 
     fs::path path = command.path;
-    if (!fs::is_directory(path))
-        fs::create_directory(path);
+    if (!fs::is_directory(path) && !fs::create_directories(path))
+    {
+        std::string msg = std::format("Failed to create directory '{}'", path.string());
+        throw std::runtime_error(msg);
+    }
 
     const out::HlsParams hls_params{
         5,
         10,
         false,
-        path / "output.m3u8"
+        path / "index.m3u8"
     };
 
     auto output_ctx_provider =
@@ -130,17 +133,24 @@ auto main(int argc, char* argv[]) -> int
     std::queue<std::thread> workers;
 
     std::queue<std::string> messages;
+
+    constexpr timeval timeout{0, 0};
     while (true)
     {
-        // BUG: Consumer is a sync function and it takes a long time.
-        client_mtx.lock();
-        if (client_ptr->Consumer(messages, settings.channel.consumer_queue_name) < 0)
-        {
-            client_ptr = nullptr;
-            break;
-        }
-        client_mtx.unlock();
+        using namespace std::chrono;
+        std::this_thread::sleep_for(10ms);
 
+        {
+            std::lock_guard lock{client_mtx};
+            if (client_ptr->Consumer(messages, settings.channel.consumer_queue_name, 1, &timeout) < 0)
+            {
+                client_ptr = nullptr;
+                break;
+            }
+        }
+
+        if (messages.empty())
+            continue;
         std::string msg = messages.front();
         messages.pop();
 
@@ -148,7 +158,6 @@ auto main(int argc, char* argv[]) -> int
         workers.emplace(consumer_thread, command);
     }
 
-    client_mtx.unlock();
     while (!workers.empty())
     {
         if (workers.front().joinable())

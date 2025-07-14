@@ -234,7 +234,7 @@ namespace medi_cloud::messaging::rabbitmq
         message_bytes.len = message.length();
         // ReSharper disable once CppCStyleCast
         message_bytes.bytes = (void*)message.c_str();
-        std::println(std::cerr, "publish message({}): {}", message.length(), message);
+        std::println(std::cout, "publish message({}): {}", message.length(), message);
 
         if (0 != amqp_basic_publish(
             conn_, channel_settings_.channel,
@@ -287,7 +287,7 @@ namespace medi_cloud::messaging::rabbitmq
             0,
             amqp_empty_table);
 
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "Consuming"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "Consuming") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -3;
@@ -299,8 +299,15 @@ namespace medi_cloud::messaging::rabbitmq
         while (msg_count > 0)
         {
             amqp_maybe_release_buffers(conn_);
-            if (const amqp_rpc_reply_t res = amqp_consume_message(conn_, &envelope, timeout, 0);
-                AMQP_RESPONSE_NORMAL != res.reply_type)
+            const amqp_rpc_reply_t res = amqp_consume_message(conn_, &envelope, timeout, 0);
+            if (res.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION &&
+                res.library_error == AMQP_STATUS_TIMEOUT)
+            {
+                amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
+                return 0;
+            }
+
+            if (res.reply_type != AMQP_RESPONSE_NORMAL)
             {
                 std::println(std::cerr, "Consumer amqp_channel_close failed");
                 amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
