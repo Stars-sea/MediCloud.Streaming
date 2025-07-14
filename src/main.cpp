@@ -4,10 +4,10 @@
 #include <thread>
 #include <nlohmann/json.hpp>
 
-#include "messages.h"
-#include "rabbitmq_client.h"
-#include "settings.h"
-#include "srt_downloader.h"
+#include "messaging/messages.h"
+#include "messaging/rabbitmq_client.h"
+#include "messaging/settings.h"
+#include "streaming/srt_downloader.h"
 
 using namespace medi_cloud;
 

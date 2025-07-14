@@ -42,18 +42,6 @@ namespace medi_cloud::recvsrt
             throw std::runtime_error(util::get_err_msg(ret));
         }
 
-        // // 重设流索引
-        // const AVStream* in_stream  = ctx.input_ctx->streams[packet.stream_index];
-        // const AVStream* out_stream = ctx.output_ctx->streams[packet.stream_index];
-        //
-        // // 时间基转换
-        // packet.pts = av_rescale_q_rnd(packet.pts, in_stream->time_base, out_stream->time_base,
-        //                               static_cast<AVRounding>(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-        // packet.dts = av_rescale_q_rnd(packet.dts, in_stream->time_base, out_stream->time_base,
-        //                               static_cast<AVRounding>(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
-        // packet.duration = av_rescale_q(packet.duration, in_stream->time_base, out_stream->time_base);
-        // packet.pos      = -1;
-
         const AVStream* istream = ctx.input_ctx->streams[packet->stream_index];
         const AVStream* ostream = ctx.output_ctx->streams[packet->stream_index];
         av_packet_rescale_ts(packet, istream->time_base, ostream->time_base);
@@ -81,26 +69,6 @@ namespace medi_cloud::recvsrt
 
         if (ctx.output_ctx)
         {
-            // // 写入文件尾
-            // av_write_trailer(ctx.output_ctx);
-            //
-            // // 清理自定义IO上下文
-            // if (ctx.output_ctx->pb)
-            // {
-            //     // 获取自定义IO上下文
-            //     if (ctx.output_ctx->pb->opaque)
-            //     {
-            //         const auto* custom_io_ctx = static_cast<OStreamIOContext*>(ctx.output_ctx->pb->opaque);
-            //         delete custom_io_ctx;
-            //     }
-            //
-            //     // 释放缓冲区
-            //     if (ctx.output_ctx->pb->buffer)
-            //         av_free(ctx.output_ctx->pb->buffer);
-            //            //
-            //            //     // 释放AVIO上下文
-            //            //     avio_context_free(&ctx.output_ctx->pb);
-            //            // }
             avformat_free_context(ctx.output_ctx);
             ctx.output_ctx = nullptr;
         }

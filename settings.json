@@ -9,7 +9,7 @@
   "channel": {
     "consumer_queue_name": "PullStreamCommand",
     "producer_queue_name": "StreamRetrievedResponse",
-    "producer_exchange_name": "live.exchange",
+    "producer_exchange_name": "StreamRetrievedResponse",
     "producer_routing_key": "",
     "channel": 1
   }
