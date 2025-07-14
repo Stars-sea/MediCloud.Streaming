@@ -60,7 +60,8 @@ namespace medi_cloud::messaging::messages
         return uuid_str;
     }
 
-    std::string envelop_message(StreamRetrievedResponse response)
+    template <typename Message>
+    std::string envelop_message(const Message& response)
     {
         settings::RabbitMQSettings settings;
         settings::read_from("settings.json", settings);
@@ -82,7 +83,7 @@ namespace medi_cloud::messaging::messages
         std::string messageType =
             "urn:message:MediCloud.Application.Live.Contracts:StreamRetrievedResponse";
 
-        json envelope = {
+        const json envelope = {
             {"messageId", generate_uuid()},
             {"conversationId", generate_uuid()},
             {"sourceAddress", sourceAddress},

@@ -40,6 +40,8 @@ add_executable(medi_cloud_recvsrt src/streaming/srt_downloader.cpp
         src/messaging/rabbitmq_client.h
         src/messaging/messages.cpp
         src/messaging/messages.h
+        src/consumers.cpp
+        src/consumers.h
 )
 
 target_link_libraries(medi_cloud_recvsrt ${AVFORMAT_LIBRARIES})

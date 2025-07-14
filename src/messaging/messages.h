@@ -37,7 +37,8 @@ namespace medi_cloud::messaging::messages
 
     std::string generate_uuid();
 
-    std::string envelop_message(StreamRetrievedResponse response);
+    template <typename Message>
+    std::string envelop_message(const Message& response);
 }
 
 #endif //MESSAGES_H
