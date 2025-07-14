@@ -5,7 +5,7 @@
 
 #include "settings.h"
 
-namespace medi_cloud::messages
+namespace medi_cloud::messaging::messages
 {
     void to_json(json& j, const PullStreamCommand& command)
     {

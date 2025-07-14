@@ -11,7 +11,7 @@ extern "C" {
 #include <libavutil/time.h>
 }
 
-namespace medi_cloud::recvsrt
+namespace medi_cloud::streaming::in
 {
     void init_ffmpeg()
     {
@@ -39,7 +39,7 @@ namespace medi_cloud::recvsrt
                 return true;
             }
 
-            throw std::runtime_error(util::get_err_msg(ret));
+            throw std::runtime_error(streaming::get_err_msg(ret));
         }
 
         const AVStream* istream = ctx.input_ctx->streams[packet->stream_index];
@@ -48,7 +48,7 @@ namespace medi_cloud::recvsrt
 
         // 写入数据包
         if ((ret = av_interleaved_write_frame(ctx.output_ctx, packet)) < 0)
-            throw std::runtime_error(util::get_err_msg(ret));
+            throw std::runtime_error(streaming::get_err_msg(ret));
 
         av_packet_unref(packet);
 

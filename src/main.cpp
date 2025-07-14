@@ -9,7 +9,7 @@
 #include "messaging/settings.h"
 #include "streaming/srt_downloader.h"
 
-using namespace medi_cloud;
+using namespace medi_cloud::messaging;
 
 using json = nlohmann::json;
 
@@ -19,7 +19,8 @@ std::unique_ptr<rabbitmq::rabbitmq_client> client_ptr;
 
 void consumer_thread(messages::PullStreamCommand command)
 {
-    recvsrt::SrtConnectionParams params{
+    using namespace medi_cloud::streaming;
+    in::SrtConnectionParams params{
         command.timeout,
         command.latency,
         command.ffs
@@ -27,13 +28,13 @@ void consumer_thread(messages::PullStreamCommand command)
     if (!command.passphrase.empty())
         memcpy(params.passphrase, command.passphrase.c_str(), command.passphrase.size());
 
-    recvsrt::DownloadState state;
+    in::DownloadState state;
 
-    std::ofstream output_file{command.path, std::ios_base::binary | std::ios_base::out};
+    // std::ofstream output_file{command.path, std::ios_base::binary | std::ios_base::out};
 
     std::println(std::cout, "[Streaming] Begin to pull stream {} -> {}", command.url, command.path);
-    // recvsrt::download(command.url, params, command.path, state);
-    recvsrt::download(command.url, params, output_file, state);
+    in::download(command.url, params, command.path, state);
+    // recvsrt::download(command.url, params, output_file, state);
     std::println(std::cout, "[Streaming] Stream retrieved {} -> {}", command.url, command.path);
 
     if (!client_ptr)
@@ -44,13 +45,13 @@ void consumer_thread(messages::PullStreamCommand command)
         command.url,
         command.path
     };
-    if (state == recvsrt::DownloadState::INIT)
+    if (state == in::DownloadState::INIT)
         message.code = "init";
-    else if (state == recvsrt::DownloadState::DOWNLOADING)
+    else if (state == in::DownloadState::DOWNLOADING)
         message.code = "downloading";
-    else if (state == recvsrt::DownloadState::DONE)
+    else if (state == in::DownloadState::DONE)
         message.code = "done";
-    else if (state == recvsrt::DownloadState::ERROR)
+    else if (state == in::DownloadState::ERROR)
         message.code = "error";
 
     std::lock_guard lock(client_mtx);

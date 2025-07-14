@@ -2,7 +2,7 @@
 #define UTIL_H
 #include <string>
 
-namespace medi_cloud::util
+namespace medi_cloud::streaming
 {
     std::string get_err_msg(int err_code);
 }

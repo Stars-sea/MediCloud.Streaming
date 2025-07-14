@@ -6,7 +6,7 @@ extern "C" {
 #include <libavutil/error.h>
 }
 
-namespace medi_cloud::recvsrt
+namespace medi_cloud::streaming::out
 {
     // 自定义IO写回调函数
     static int ostream_write_packet(void* opaque, const uint8_t* buf, int buf_size)
@@ -106,7 +106,7 @@ namespace medi_cloud::recvsrt
 
         // 写入文件头
         if (const int ret = avformat_write_header(output_ctx, nullptr); ret < 0)
-            throw std::runtime_error(util::get_err_msg(ret));
+            throw std::runtime_error(streaming::get_err_msg(ret));
 
         return output_ctx;
     }

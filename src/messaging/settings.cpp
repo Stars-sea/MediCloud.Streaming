@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-namespace medi_cloud::settings
+namespace medi_cloud::messaging::settings
 {
 
     void from_json(const json& j, RabbitMQConnectionSettings& settings)

@@ -2,7 +2,7 @@
 #define MESSAGES_H
 #include <nlohmann/json_fwd.hpp>
 
-namespace medi_cloud::messages
+namespace medi_cloud::messaging::messages
 {
     using json = nlohmann::json;
 

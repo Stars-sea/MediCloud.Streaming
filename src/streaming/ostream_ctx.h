@@ -6,7 +6,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-namespace medi_cloud::recvsrt
+namespace medi_cloud::streaming::out
 {
     // 自定义IO上下文结构体
     struct OStreamIOContext

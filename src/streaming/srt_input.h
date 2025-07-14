@@ -6,7 +6,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-namespace medi_cloud::recvsrt
+namespace medi_cloud::streaming::in
 {
     // SRT连接参数结构体
     struct SrtConnectionParams

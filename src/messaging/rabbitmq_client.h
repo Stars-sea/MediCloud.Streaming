@@ -6,7 +6,7 @@
 #include <rabbitmq-c/amqp.h>
 #include "settings.h"
 
-namespace medi_cloud::rabbitmq
+namespace medi_cloud::messaging::rabbitmq
 {
     using std::string;
 

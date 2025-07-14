@@ -4,7 +4,7 @@ extern "C" {
 #include <libavutil/error.h>
 }
 
-namespace medi_cloud::util
+namespace medi_cloud::streaming
 {
     std::string get_err_msg(const int err_code)
     {

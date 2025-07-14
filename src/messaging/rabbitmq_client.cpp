@@ -5,7 +5,7 @@
 #include <utility>
 #include <rabbitmq-c/tcp_socket.h>
 
-namespace medi_cloud::rabbitmq
+namespace medi_cloud::messaging::rabbitmq
 {
     rabbitmq_client::rabbitmq_client(
         settings::RabbitMQConnectionSettings connection_settings,

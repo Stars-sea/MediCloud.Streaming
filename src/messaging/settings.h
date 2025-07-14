@@ -3,7 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace medi_cloud::settings
+namespace medi_cloud::messaging::settings
 {
     using json = nlohmann::json;
 
