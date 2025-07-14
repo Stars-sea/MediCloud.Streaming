@@ -34,6 +34,10 @@ namespace medi_cloud::messages
     void to_json(json& j, const StreamRetrievedResponse& command);
 
     void from_json(const json& j, StreamRetrievedResponse& command);
+
+    std::string generate_uuid();
+
+    std::string envelop_message(StreamRetrievedResponse response);
 }
 
 #endif //MESSAGES_H

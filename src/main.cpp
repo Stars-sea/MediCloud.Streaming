@@ -29,7 +29,7 @@ void consumer_thread(messages::PullStreamCommand command)
 
     recvsrt::DownloadState state;
 
-    std::ofstream output_file{command.path, std::ios_base::binary|std::ios_base::out};
+    std::ofstream output_file{command.path, std::ios_base::binary | std::ios_base::out};
 
     std::println(std::cout, "[Streaming] Begin to pull stream {} -> {}", command.url, command.path);
     // recvsrt::download(command.url, params, command.path, state);
@@ -53,11 +53,9 @@ void consumer_thread(messages::PullStreamCommand command)
     else if (state == recvsrt::DownloadState::ERROR)
         message.code = "error";
 
-    json json_message = message;
-
     std::lock_guard lock(client_mtx);
     if (client_ptr->Publish(
-        json_message.dump(),
+        messages::envelop_message(message),
         channel_settings.producer_exchange_name,
         channel_settings.producer_routing_key) < 0)
     {
@@ -114,6 +112,7 @@ auto main(int argc, char* argv[]) -> int
     std::queue<std::string> messages;
     while (true)
     {
+        // BUG: Consumer is a sync function and it takes a long time.
         client_mtx.lock();
         if (client_ptr->Consumer(messages, settings.channel.consumer_queue_name) < 0)
         {

@@ -11,6 +11,8 @@ pkg_check_modules(RABBITMQ REQUIRED librabbitmq)
 
 pkg_check_modules(JSON REQUIRED nlohmann_json)
 
+pkg_check_modules(UUID REQUIRED uuid)
+
 set(CMAKE_CXX_STANDARD 23)
 
 include_directories(${AVFORMAT_INCLUDE_DIRS})
@@ -20,6 +22,8 @@ include_directories(${AVUTIL_INCLUDE_DIRS})
 include_directories(${RABBITMQ_INCLUDE_DIRS})
 
 include_directories(${JSON_INCLUDE_DIRS})
+
+include_directories(${UUID_INCLUDE_DIRS})
 
 add_executable(medi_cloud_recvsrt src/streaming/srt_downloader.cpp
         src/streaming/ostream_ctx.cpp
@@ -44,3 +48,5 @@ target_link_libraries(medi_cloud_recvsrt ${AVUTIL_LIBRARIES})
 target_link_libraries(medi_cloud_recvsrt ${RABBITMQ_LIBRARIES})
 
 target_link_libraries(medi_cloud_recvsrt ${JSON_LIBRARIES})
+
+target_link_libraries(medi_cloud_recvsrt ${UUID_LIBRARIES})

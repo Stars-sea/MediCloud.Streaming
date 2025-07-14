@@ -1,6 +1,9 @@
 #include "messages.h"
 
 #include <nlohmann/json.hpp>
+#include <uuid/uuid.h>
+
+#include "settings.h"
 
 namespace medi_cloud::messages
 {
@@ -44,6 +47,50 @@ namespace medi_cloud::messages
         j.at("url").get_to(command.url);
         j.at("path").get_to(command.path);
         j.at("code").get_to(command.code);
+    }
+
+    std::string generate_uuid()
+    {
+        uuid_t uuid;
+        uuid_generate_random(uuid);
+
+        std::string uuid_str;
+        uuid_unparse_lower(uuid, uuid_str.data());
+
+        return uuid_str;
+    }
+
+    std::string envelop_message(StreamRetrievedResponse response)
+    {
+        settings::RabbitMQSettings settings;
+        settings::read_from("settings.json", settings);
+
+        std::string sourceAddress = std::format(
+            "rabbitmq://{}:{}/{}/{}",
+            settings.connection.host,
+            settings.connection.port,
+            settings.connection.vhost,
+            settings.channel.consumer_queue_name);
+
+        std::string destinationAddress = std::format(
+            "rabbitmq://{}:{}/{}/{}",
+            settings.connection.host,
+            settings.connection.port,
+            settings.connection.vhost,
+            settings.channel.producer_exchange_name);
+
+        std::string messageType =
+            "urn:message:MediCloud.Application.Live.Contracts:StreamRetrievedResponse";
+
+        json envelope = {
+            {"messageId", generate_uuid()},
+            {"conversationId", generate_uuid()},
+            {"sourceAddress", sourceAddress},
+            {"destinationAddress", destinationAddress},
+            {"messageType", json::array({messageType})},
+            {"message", response}
+        };
+        return envelope.dump();
     }
 
 }
