@@ -33,28 +33,6 @@ namespace medi_cloud::streaming::out
 
     AVFormatContext* setup_output_ostream(const AVFormatContext* input_ctx, std::ostream& stream)
     {
-        // AVFormatContext* output_ctx = nullptr;
-
-        // int ret;
-        // // 创建输出上下文 - 使用mpegts格式，因为它是流式友好的
-        // if ((ret = avformat_alloc_output_context2(&output_ctx, nullptr, "mpegts", nullptr)) < 0)
-        //     throw std::runtime_error(util::get_err_msg(ret));
-
-        // 复制输入流到输出
-        // for (unsigned i = 0; i < input_ctx->nb_streams; i++)
-        // {
-        //     const AVStream* in_stream  = input_ctx->streams[i];
-        //     AVStream*       out_stream = avformat_new_stream(output_ctx, nullptr);
-        //     if (!out_stream)
-        //         throw std::runtime_error("Failed to allocate output stream");
-        //
-        //     // 复制流参数
-        //     if ((ret = avcodec_parameters_copy(out_stream->codecpar, in_stream->codecpar)) < 0)
-        //         throw std::runtime_error(util::get_err_msg(ret));
-        //
-        //     out_stream->time_base = in_stream->time_base;
-        // }
-
         // 创建自定义IO上下文
         constexpr int buffer_size = 4096; // 缓冲区大小
         auto*         buffer      = static_cast<uint8_t*>(av_malloc(buffer_size));
@@ -71,7 +49,6 @@ namespace medi_cloud::streaming::out
             custom_io_ctx,
             nullptr,
             ostream_write_packet,
-            // ostream_seek // 不支持seek
             nullptr
             );
         if (!avio_ctx)
@@ -80,9 +57,6 @@ namespace medi_cloud::streaming::out
             delete custom_io_ctx;
             throw std::runtime_error("Failed to allocate AVIO context");
         }
-
-        // output_ctx->pb = avio_ctx;
-        // output_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
         AVFormatContext* output_ctx = avformat_alloc_context();
         output_ctx->pb              = avio_ctx;
@@ -106,7 +80,7 @@ namespace medi_cloud::streaming::out
 
         // 写入文件头
         if (const int ret = avformat_write_header(output_ctx, nullptr); ret < 0)
-            throw std::runtime_error(streaming::get_err_msg(ret));
+            throw std::runtime_error(get_err_msg(ret));
 
         return output_ctx;
     }
@@ -131,7 +105,42 @@ namespace medi_cloud::streaming::out
                 throw std::runtime_error("Failed to open output file");
         }
 
-        avformat_write_header(output_ctx, nullptr);
+        if (avformat_write_header(output_ctx, nullptr) < 0)
+            throw std::runtime_error("Failed to write output header");
         return output_ctx;
+    }
+
+    AVFormatContext* setup_output_hls(const AVFormatContext* input_ctx, const HlsParams& params)
+    {
+        AVFormatContext* hls_output_ctx;
+        avformat_alloc_output_context2(&hls_output_ctx, nullptr, "hls", params.hls_output.c_str());
+
+        AVDictionary* hls_options = nullptr;
+        av_dict_set_int(&hls_options, "hls_time", params.segment_time, 0);
+        av_dict_set_int(&hls_options, "hls_list_size", params.list_size, 0);
+        if (params.delete_segments)
+            av_dict_set(&hls_options, "hls_flags", "delete_segments", 0);
+
+        std::for_each_n(
+            input_ctx->streams, input_ctx->nb_streams,
+            [hls_output_ctx](const AVStream* istream)
+            {
+                AVStream* hls_ostream = avformat_new_stream(hls_output_ctx, nullptr);
+                if (!hls_ostream || avcodec_parameters_copy(hls_ostream->codecpar, istream->codecpar) < 0)
+                    throw std::runtime_error("Failed to allocate output stream");
+
+                hls_ostream->time_base = istream->time_base;
+            });
+
+        if (!(hls_output_ctx->oformat->flags & AVFMT_NOFILE))
+        {
+            if (avio_open(&hls_output_ctx->pb, params.hls_output.c_str(), AVIO_FLAG_WRITE) < 0)
+                throw std::runtime_error("Failed to open output file");
+        }
+
+        if (avformat_write_header(hls_output_ctx, &hls_options) < 0)
+            throw std::runtime_error("Failed to write output header");
+
+        return hls_output_ctx;
     }
 }

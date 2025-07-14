@@ -1,5 +1,6 @@
 #ifndef SRT_DOWNLOADER_H
 #define SRT_DOWNLOADER_H
+#include <functional>
 #include <string>
 
 #include "srt_input.h"
@@ -26,26 +27,18 @@ namespace medi_cloud::streaming::in
         ERROR       = 3,
     };
 
+    using ctx_provider = std::function<AVFormatContext*(AVFormatContext*)>;
+
     // 初始化FFmpeg网络库
     void init_ffmpeg();
-
-    // 处理数据包（读取、转换、写入）
-    bool process_packet(const StreamContext& ctx);
 
     // 清理资源
     void cleanup(StreamContext& ctx);
 
-    // 开始下载
     void download(
         const std::string&         url,
         const SrtConnectionParams& params,
-        std::ostream&              output,
-        DownloadState&             state);
-
-    void download(
-        const std::string&         url,
-        const SrtConnectionParams& params,
-        const std::string&         path,
+        const ctx_provider&        output_ctx,
         DownloadState&             state);
 }
 

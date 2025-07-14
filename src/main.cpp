@@ -7,6 +7,7 @@
 #include "messaging/messages.h"
 #include "messaging/rabbitmq_client.h"
 #include "messaging/settings.h"
+#include "streaming/ostream_ctx.h"
 #include "streaming/srt_downloader.h"
 
 using namespace medi_cloud::messaging;
@@ -20,7 +21,7 @@ std::unique_ptr<rabbitmq::rabbitmq_client> client_ptr;
 void consumer_thread(messages::PullStreamCommand command)
 {
     using namespace medi_cloud::streaming;
-    in::SrtConnectionParams params{
+    const in::SrtConnectionParams params{
         command.timeout,
         command.latency,
         command.ffs
@@ -30,10 +31,22 @@ void consumer_thread(messages::PullStreamCommand command)
 
     in::DownloadState state;
 
+    const out::HlsParams hls_params{
+        5,
+        10,
+        false,
+        "./cache/output.m3u8"
+    };
     // std::ofstream output_file{command.path, std::ios_base::binary | std::ios_base::out};
 
+    auto output_ctx_provider =
+        [hls_params](const AVFormatContext* input_ctx)
+        {
+            return out::setup_output_hls(input_ctx, hls_params);
+        };
+
     std::println(std::cout, "[Streaming] Begin to pull stream {} -> {}", command.url, command.path);
-    in::download(command.url, params, command.path, state);
+    in::download(command.url, params, output_ctx_provider, state);
     // recvsrt::download(command.url, params, output_file, state);
     std::println(std::cout, "[Streaming] Stream retrieved {} -> {}", command.url, command.path);
 
