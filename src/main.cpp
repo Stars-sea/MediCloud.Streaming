@@ -14,13 +14,17 @@ using namespace medi_cloud::messaging;
 
 using json = nlohmann::json;
 
-std::mutex                                 client_mtx;
-settings::RabbitMQChannelSettings          channel_settings;
-std::unique_ptr<rabbitmq::rabbitmq_client> client_ptr;
+using rabbitmq_client_ptr = std::unique_ptr<rabbitmq::rabbitmq_client>;
+
+std::mutex                client_mtx;
+settings::ChannelSettings channel_settings;
+rabbitmq_client_ptr       client_ptr;
 
 void consumer_thread(messages::PullStreamCommand command)
 {
     using namespace medi_cloud::streaming;
+    namespace fs = std::filesystem;
+
     const in::SrtConnectionParams params{
         command.timeout,
         command.latency,
@@ -31,23 +35,25 @@ void consumer_thread(messages::PullStreamCommand command)
 
     in::DownloadState state;
 
+    fs::path path = command.path;
+    if (!fs::is_directory(path))
+        fs::create_directory(path);
+
     const out::HlsParams hls_params{
         5,
         10,
         false,
-        "./cache/output.m3u8"
+        path / "output.m3u8"
     };
-    // std::ofstream output_file{command.path, std::ios_base::binary | std::ios_base::out};
 
     auto output_ctx_provider =
         [hls_params](const AVFormatContext* input_ctx)
-        {
-            return out::setup_output_hls(input_ctx, hls_params);
-        };
+    {
+        return out::setup_output_hls(input_ctx, hls_params);
+    };
 
     std::println(std::cout, "[Streaming] Begin to pull stream {} -> {}", command.url, command.path);
     in::download(command.url, params, output_ctx_provider, state);
-    // recvsrt::download(command.url, params, output_file, state);
     std::println(std::cout, "[Streaming] Stream retrieved {} -> {}", command.url, command.path);
 
     if (!client_ptr)
@@ -121,7 +127,7 @@ auto main(int argc, char* argv[]) -> int
         return -1;
     }
 
-    std::queue<std::thread> threads;
+    std::queue<std::thread> workers;
 
     std::queue<std::string> messages;
     while (true)
@@ -139,15 +145,15 @@ auto main(int argc, char* argv[]) -> int
         messages.pop();
 
         auto command = json::parse(msg)["message"].get<messages::PullStreamCommand>();
-        threads.emplace(consumer_thread, command);
+        workers.emplace(consumer_thread, command);
     }
 
     client_mtx.unlock();
-    while (!threads.empty())
+    while (!workers.empty())
     {
-        if (threads.front().joinable())
-            threads.front().join();
+        if (workers.front().joinable())
+            workers.front().join();
 
-        threads.pop();
+        workers.pop();
     }
 }

@@ -1,5 +1,7 @@
 #include "ostream_ctx.h"
 
+#include <iostream>
+
 #include "util.h"
 
 extern "C" {
@@ -9,7 +11,7 @@ extern "C" {
 namespace medi_cloud::streaming::out
 {
     // 自定义IO写回调函数
-    static int ostream_write_packet(void* opaque, const uint8_t* buf, int buf_size)
+    static int ostream_write_packet(void* opaque, const uint8_t* buf, const int buf_size)
     {
         auto* ctx = static_cast<OStreamIOContext*>(opaque);
         if (!ctx || !ctx->stream)
@@ -26,7 +28,7 @@ namespace medi_cloud::streaming::out
         }
         catch (const std::exception& e)
         {
-            std::cerr << "Error occurred while writing: " << e.what() << std::endl;
+            std::println(std::cerr, "Error occurred while writing: {}", e.what());
             return AVERROR(EIO);
         }
     }
@@ -85,10 +87,10 @@ namespace medi_cloud::streaming::out
         return output_ctx;
     }
 
-    AVFormatContext* setup_output_file(const AVFormatContext* input_ctx, const std::string& filename)
+    AVFormatContext* setup_output_file(const AVFormatContext* input_ctx, const fs::path& path)
     {
         AVFormatContext* output_ctx = avformat_alloc_context();
-        avformat_alloc_output_context2(&output_ctx, nullptr, "mpegts", filename.c_str());
+        avformat_alloc_output_context2(&output_ctx, nullptr, "mpegts", path.c_str());
 
         std::for_each_n(input_ctx->streams, input_ctx->nb_streams, [output_ctx](const AVStream* istream)
         {
@@ -101,7 +103,7 @@ namespace medi_cloud::streaming::out
 
         if (!(output_ctx->oformat->flags & AVFMT_NOFILE))
         {
-            if (avio_open(&output_ctx->pb, filename.c_str(), AVIO_FLAG_WRITE) < 0)
+            if (avio_open(&output_ctx->pb, path.c_str(), AVIO_FLAG_WRITE) < 0)
                 throw std::runtime_error("Failed to open output file");
         }
 
@@ -110,15 +112,15 @@ namespace medi_cloud::streaming::out
         return output_ctx;
     }
 
-    AVFormatContext* setup_output_hls(const AVFormatContext* input_ctx, const HlsParams& params)
+    AVFormatContext* setup_output_hls(const AVFormatContext* input_ctx, const HlsParams& hls_params)
     {
         AVFormatContext* hls_output_ctx;
-        avformat_alloc_output_context2(&hls_output_ctx, nullptr, "hls", params.hls_output.c_str());
+        avformat_alloc_output_context2(&hls_output_ctx, nullptr, "hls", hls_params.hls_output.c_str());
 
         AVDictionary* hls_options = nullptr;
-        av_dict_set_int(&hls_options, "hls_time", params.segment_time, 0);
-        av_dict_set_int(&hls_options, "hls_list_size", params.list_size, 0);
-        if (params.delete_segments)
+        av_dict_set_int(&hls_options, "hls_time", hls_params.segment_time, 0);
+        av_dict_set_int(&hls_options, "hls_list_size", hls_params.list_size, 0);
+        if (hls_params.delete_segments)
             av_dict_set(&hls_options, "hls_flags", "delete_segments", 0);
 
         std::for_each_n(
@@ -134,7 +136,7 @@ namespace medi_cloud::streaming::out
 
         if (!(hls_output_ctx->oformat->flags & AVFMT_NOFILE))
         {
-            if (avio_open(&hls_output_ctx->pb, params.hls_output.c_str(), AVIO_FLAG_WRITE) < 0)
+            if (avio_open(&hls_output_ctx->pb, hls_params.hls_output.c_str(), AVIO_FLAG_WRITE) < 0)
                 throw std::runtime_error("Failed to open output file");
         }
 

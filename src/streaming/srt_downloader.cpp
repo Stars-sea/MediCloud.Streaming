@@ -1,5 +1,6 @@
 #include "srt_downloader.h"
 
+#include <iostream>
 #include <thread>
 
 #include "ostream_ctx.h"
@@ -25,14 +26,14 @@ namespace medi_cloud::streaming::in
         // 处理读取错误
         if (ret == AVERROR_EOF || avio_feof(input_ctx->pb))
         {
-            std::cout << "到达文件结尾" << std::endl;
+            std::println(std::cout, "Read EOF");
             return false;
         }
 
         // 处理超时
         if (ret == AVERROR(EAGAIN))
         {
-            std::cerr << "超时重连中..." << std::endl;
+            std::println(std::cerr, "Timeout, reconnecting...");
             av_usleep(100000); // 等待100ms重试
             return true;
         }
@@ -76,126 +77,6 @@ namespace medi_cloud::streaming::in
         }
         avformat_network_deinit();
     }
-
-    // void download_as_stream(
-    //     const std::string&         url,
-    //     const SrtConnectionParams& params,
-    //     std::ostream&              output,
-    //     DownloadState&             state)
-    // {
-    //     state = DownloadState::INIT;
-    //
-    //     StreamContext ctx;
-    //     try
-    //     {
-    //         init_ffmpeg();
-    //
-    //         ctx.input_ctx  = open_srt_input(url, params);
-    //         ctx.output_ctx = out::setup_output_ostream(ctx.input_ctx, output);
-    //
-    //         std::println(std::cout, "[{}] Start pulling from {}", std::this_thread::get_id(), url);
-    //         state = DownloadState::DOWNLOADING;
-    //
-    //         ctx.start_time = av_gettime();
-    //         // 主循环：处理数据包
-    //         while (true)
-    //         {
-    //             if (!process_packet(ctx))
-    //                 break;
-    //         }
-    //         av_write_trailer(ctx.output_ctx);
-    //
-    //         std::println(std::cout, "[{}] Completed pulling from {}", std::this_thread::get_id(), url);
-    //         state = DownloadState::DONE;
-    //     }
-    //     catch (const std::exception&)
-    //     {
-    //         state = DownloadState::ERROR;
-    //         cleanup(ctx);
-    //     }
-    //
-    //     cleanup(ctx);
-    // }
-    //
-    // void download_as_file(
-    //     const std::string&         url,
-    //     const SrtConnectionParams& params,
-    //     const std::string&         path,
-    //     DownloadState&             state)
-    // {
-    //     state = DownloadState::INIT;
-    //
-    //     StreamContext ctx;
-    //     try
-    //     {
-    //         init_ffmpeg();
-    //
-    //         ctx.input_ctx  = open_srt_input(url, params);
-    //         ctx.output_ctx = out::setup_output_file(ctx.input_ctx, path);
-    //
-    //         std::println(std::cout, "[{}] Start pulling from {}", std::this_thread::get_id(), url);
-    //         state = DownloadState::DOWNLOADING;
-    //
-    //         ctx.start_time = av_gettime();
-    //         // 主循环：处理数据包
-    //         while (true)
-    //         {
-    //             if (!process_packet(ctx))
-    //                 break;
-    //         }
-    //         av_write_trailer(ctx.output_ctx);
-    //
-    //         std::println(std::cout, "[{}] Completed pulling from {}", std::this_thread::get_id(), url);
-    //         state = DownloadState::DONE;
-    //     }
-    //     catch (const std::exception&)
-    //     {
-    //         state = DownloadState::ERROR;
-    //         cleanup(ctx);
-    //     }
-    //
-    //     cleanup(ctx);
-    // }
-    //
-    // void download_as_hls(
-    //     const std::string&         url,
-    //     const SrtConnectionParams& params,
-    //     const out::HlsParams&      hls_params,
-    //     DownloadState&             state)
-    // {
-    //     state = DownloadState::INIT;
-    //
-    //     StreamContext ctx;
-    //     try
-    //     {
-    //         init_ffmpeg();
-    //
-    //         ctx.input_ctx  = open_srt_input(url, params);
-    //         ctx.output_ctx = out::setup_output_hls(ctx.input_ctx, hls_params);
-    //
-    //         std::println(std::cout, "[{}] Start pulling from {}", std::this_thread::get_id(), url);
-    //         state = DownloadState::DOWNLOADING;
-    //
-    //         ctx.start_time = av_gettime();
-    //         // 主循环：处理数据包
-    //         while (true)
-    //         {
-    //             if (!process_packet_hlsonly(ctx))
-    //                 break; // 流结束
-    //         }
-    //         av_write_trailer(ctx.output_ctx);
-    //
-    //         std::println(std::cout, "[{}] Completed pulling from {}", std::this_thread::get_id(), url);
-    //         state = DownloadState::DONE;
-    //     }
-    //     catch (const std::exception&)
-    //     {
-    //         state = DownloadState::ERROR;
-    //         cleanup(ctx);
-    //     }
-    //
-    //     cleanup(ctx);
-    // }
 
     void download(
         const std::string&         url,

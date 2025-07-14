@@ -14,8 +14,8 @@ namespace medi_cloud::messaging::rabbitmq
     {
     public:
         rabbitmq_client(
-            settings::RabbitMQConnectionSettings connection_settings,
-            settings::RabbitMQChannelSettings    channel_settings);
+            settings::ConnectionSettings connection_settings,
+            settings::ChannelSettings    channel_settings);
         ~rabbitmq_client();
 
 
@@ -109,8 +109,8 @@ namespace medi_cloud::messaging::rabbitmq
         static int ErrorMsg(const amqp_rpc_reply_t& x, char const* context);
 
 
-        settings::RabbitMQConnectionSettings connection_settings_;
-        settings::RabbitMQChannelSettings    channel_settings_;
+        settings::ConnectionSettings connection_settings_;
+        settings::ChannelSettings    channel_settings_;
 
         amqp_socket_t*          sock_;
         amqp_connection_state_t conn_;

@@ -8,8 +8,8 @@
 namespace medi_cloud::messaging::rabbitmq
 {
     rabbitmq_client::rabbitmq_client(
-        settings::RabbitMQConnectionSettings connection_settings,
-        settings::RabbitMQChannelSettings    channel_settings) :
+        settings::ConnectionSettings connection_settings,
+        settings::ChannelSettings    channel_settings) :
         connection_settings_(std::move(connection_settings)),
         channel_settings_(std::move(channel_settings)),
         sock_(nullptr),
@@ -47,7 +47,6 @@ namespace medi_cloud::messaging::rabbitmq
             return -3;
         }
 
-        // amqp_login(amqp_connection_state_t state,char const *vhost, int channel_max, int frame_max, int heartbeat, amqp_sasl_method_enum sasl_method, ..)
         const amqp_rpc_reply_t reply = amqp_login(
             conn_,
             connection_settings_.vhost.c_str(),
@@ -65,9 +64,9 @@ namespace medi_cloud::messaging::rabbitmq
 
     int rabbitmq_client::Disconnect()
     {
-        if (nullptr != conn_)
+        if (conn_)
         {
-            if (0 != ErrorMsg(amqp_connection_close(conn_, AMQP_REPLY_SUCCESS), "Closing connection"))
+            if (ErrorMsg(amqp_connection_close(conn_, AMQP_REPLY_SUCCESS), "Closing connection") < 0)
                 return -1;
 
             if (amqp_destroy_connection(conn_) < 0)
@@ -95,7 +94,7 @@ namespace medi_cloud::messaging::rabbitmq
             conn_, channel_settings_.channel,
             _exchange, _type, passive, durable, auto_delete, 0, amqp_empty_table);
 
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "exchange_declare"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "exchange_declare") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -1;
@@ -123,7 +122,7 @@ namespace medi_cloud::messaging::rabbitmq
             conn_, channel_settings_.channel,
             amqp_cstring_bytes(queue_name.c_str()),
             passive, durable, exclusive, auto_delete, amqp_empty_table);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "queue_declare"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "queue_declare") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -1;
@@ -149,7 +148,7 @@ namespace medi_cloud::messaging::rabbitmq
         const amqp_bytes_t _exchange  = amqp_cstring_bytes(exchange_name.c_str());
         const amqp_bytes_t _route_key = amqp_cstring_bytes(routing_key.c_str());
         amqp_queue_bind(conn_, channel_settings_.channel, _queue, _exchange, _route_key, amqp_empty_table);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "queue_bind"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "queue_bind") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -1;
@@ -175,7 +174,7 @@ namespace medi_cloud::messaging::rabbitmq
         const amqp_bytes_t _exchange  = amqp_cstring_bytes(exchange_name.c_str());
         const amqp_bytes_t _route_key = amqp_cstring_bytes(routing_key.c_str());
         amqp_queue_unbind(conn_, channel_settings_.channel, _queue, _exchange, _route_key, amqp_empty_table);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "queue_unbind"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "queue_unbind") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -1;
@@ -194,7 +193,7 @@ namespace medi_cloud::messaging::rabbitmq
         }
 
         amqp_channel_open(conn_, channel_settings_.channel);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "open channel"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "open channel") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -2;
@@ -206,7 +205,7 @@ namespace medi_cloud::messaging::rabbitmq
             amqp_cstring_bytes(queue_name.c_str()),
             is_unused,
             0);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "delete queue"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "delete queue") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -3;
@@ -225,7 +224,7 @@ namespace medi_cloud::messaging::rabbitmq
         }
 
         amqp_channel_open(conn_, channel_settings_.channel);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "open channel"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "open channel") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -2;
@@ -235,16 +234,8 @@ namespace medi_cloud::messaging::rabbitmq
         message_bytes.len = message.length();
         // ReSharper disable once CppCStyleCast
         message_bytes.bytes = (void*)message.c_str();
-        //std::println(std::cerr, "publish message(%d): %.*s", (int)message_bytes.len, (int)message_bytes.len, (char *)message_bytes.bytes);
+        std::println(std::cerr, "publish message({}): {}", message.length(), message);
 
-        /*
-        amqp_basic_properties_t props;
-        props._flags = AMQP_BASIC_CONTENT_TYPE_FLAG | AMQP_BASIC_DELIVERY_MODE_FLAG;
-        props.content_type = amqp_cstring_bytes(m_type.c_str());
-        props.delivery_mode = m_durable;    // persistent delivery mode
-        */
-
-        //if (0 != amqp_basic_publish(conn_, channel_settings_.channel, exchange, routekey, 0, 0, &props, message_bytes)) {
         if (0 != amqp_basic_publish(
             conn_, channel_settings_.channel,
             amqp_cstring_bytes(exchange_name.c_str()),
@@ -255,7 +246,7 @@ namespace medi_cloud::messaging::rabbitmq
             message_bytes))
         {
             std::println(std::cerr, "publish amqp_basic_publish failed");
-            if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "amqp_basic_publish"))
+            if (ErrorMsg(amqp_get_rpc_reply(conn_), "amqp_basic_publish") != 0)
             {
                 amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
                 return -3;
@@ -279,7 +270,7 @@ namespace medi_cloud::messaging::rabbitmq
         }
 
         amqp_channel_open(conn_, channel_settings_.channel);
-        if (0 != ErrorMsg(amqp_get_rpc_reply(conn_), "open channel"))
+        if (ErrorMsg(amqp_get_rpc_reply(conn_), "open channel") != 0)
         {
             amqp_channel_close(conn_, channel_settings_.channel, AMQP_REPLY_SUCCESS);
             return -2;

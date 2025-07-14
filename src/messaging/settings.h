@@ -7,7 +7,7 @@ namespace medi_cloud::messaging::settings
 {
     using json = nlohmann::json;
 
-    struct RabbitMQConnectionSettings
+    struct ConnectionSettings
     {
         std::string host;
         int         port;
@@ -16,9 +16,9 @@ namespace medi_cloud::messaging::settings
         std::string password;
     };
 
-    void from_json(const json& j, RabbitMQConnectionSettings& settings);
+    void from_json(const json& j, ConnectionSettings& settings);
 
-    struct RabbitMQChannelSettings
+    struct ChannelSettings
     {
         std::string consumer_queue_name;
         std::string producer_queue_name;
@@ -27,12 +27,12 @@ namespace medi_cloud::messaging::settings
         uint16_t    channel;;
     };
 
-    void from_json(const json& j, RabbitMQChannelSettings& settings);
+    void from_json(const json& j, ChannelSettings& settings);
 
     struct RabbitMQSettings
     {
-        RabbitMQConnectionSettings connection;
-        RabbitMQChannelSettings channel;
+        ConnectionSettings connection;
+        ChannelSettings    channel;
     };
 
     void read_from(const std::string& file, RabbitMQSettings& settings);

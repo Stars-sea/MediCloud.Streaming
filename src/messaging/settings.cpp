@@ -5,7 +5,7 @@
 namespace medi_cloud::messaging::settings
 {
 
-    void from_json(const json& j, RabbitMQConnectionSettings& settings)
+    void from_json(const json& j, ConnectionSettings& settings)
     {
         j.at("host").get_to(settings.host);
         j.at("port").get_to(settings.port);
@@ -14,7 +14,7 @@ namespace medi_cloud::messaging::settings
         j.at("password").get_to(settings.password);
     }
 
-    void from_json(const json& j, RabbitMQChannelSettings& settings)
+    void from_json(const json& j, ChannelSettings& settings)
     {
         j.at("consumer_queue_name").get_to(settings.consumer_queue_name);
         j.at("producer_queue_name").get_to(settings.producer_queue_name);
