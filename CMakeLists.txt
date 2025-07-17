@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.31)
 project(medi_cloud_livestreaming)
+set(CMAKE_PROJECT_LICENSE "GPL-3.0-or-later")
 
 find_package(PkgConfig REQUIRED)
 
