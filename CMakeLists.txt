@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.31)
-project(medi_cloud_recvsrt)
+project(medi_cloud_livestreaming)
 
 find_package(PkgConfig REQUIRED)
 
@@ -25,7 +25,7 @@ include_directories(${JSON_INCLUDE_DIRS})
 
 include_directories(${UUID_INCLUDE_DIRS})
 
-add_executable(medi_cloud_recvsrt src/streaming/srt_downloader.cpp
+add_executable(medi_cloud_livestreaming src/streaming/srt_downloader.cpp
         src/streaming/ostream_ctx.cpp
         src/streaming/ostream_ctx.h
         src/streaming/srt_input.cpp
@@ -44,12 +44,12 @@ add_executable(medi_cloud_recvsrt src/streaming/srt_downloader.cpp
         src/consumers.h
 )
 
-target_link_libraries(medi_cloud_recvsrt ${AVFORMAT_LIBRARIES})
-target_link_libraries(medi_cloud_recvsrt ${AVCODEC_LIBRARIES})
-target_link_libraries(medi_cloud_recvsrt ${AVUTIL_LIBRARIES})
+target_link_libraries(medi_cloud_livestreaming ${AVFORMAT_LIBRARIES})
+target_link_libraries(medi_cloud_livestreaming ${AVCODEC_LIBRARIES})
+target_link_libraries(medi_cloud_livestreaming ${AVUTIL_LIBRARIES})
 
-target_link_libraries(medi_cloud_recvsrt ${RABBITMQ_LIBRARIES})
+target_link_libraries(medi_cloud_livestreaming ${RABBITMQ_LIBRARIES})
 
-target_link_libraries(medi_cloud_recvsrt ${JSON_LIBRARIES})
+target_link_libraries(medi_cloud_livestreaming ${JSON_LIBRARIES})
 
-target_link_libraries(medi_cloud_recvsrt ${UUID_LIBRARIES})
+target_link_libraries(medi_cloud_livestreaming ${UUID_LIBRARIES})
